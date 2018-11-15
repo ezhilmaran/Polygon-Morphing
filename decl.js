@@ -100,3 +100,11 @@ function drawPoly(vertexBuffer,color) {
 function clearPoly(vertexBuffer) {
 	drawPoly(vertexBuffer,"black");
 }
+
+function dispCursorPos() {
+	context.clearRect(0,0,40,20);
+	context.fillStyle = "#ffffff";
+	context.font = "10px Arial";
+	context.fillText("X : "+cur_posX,5,10);
+	context.fillText("Y : "+cur_posY,5,20);
+}

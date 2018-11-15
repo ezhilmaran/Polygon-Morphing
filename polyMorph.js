@@ -16,6 +16,8 @@ function updateCursor(event) {
 	// update cursor position
 	cur_posX = Math.floor(event.offsetX/px_size);
 	cur_posY = Math.floor(event.offsetY/px_size);
+	// displaying the cursor co-ordinates
+	dispCursorPos();
 	// preview line
 	draw_mode = "preview";
 	if (startEstablishingMorphingRelationship && vertexSelectionStarted) {

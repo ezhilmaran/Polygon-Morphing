@@ -6,4 +6,5 @@ body {
 #mainCanvas {
 	background-color: black;
 	position: fixed;
+	cursor: none;
 }
