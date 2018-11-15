@@ -47,25 +47,20 @@ function registerVertex(event) {
 		if (!vertexDuplicate) {
 			// no more than 2 polygons
 			if (!(polygonBuffer.length == 2 &&  startNewPoly == true)) {
-				// no.of end vertices <= no.of start vertices
-				if(polygonBuffer.length <= 1 || (polygonBuffer.length > 1 && polygonBuffer[0].length > polygonBuffer[1].length)) {
-					// polygon creation process
-					if (startNewPoly && polygonBuffer.length < 2) {
-						// new polygon
-						startNewPoly = false;
-						let vertexBuffer = [];
-						vertexBuffer.push({x : cur_posX , y : cur_posY});
-						polygonBuffer.push(vertexBuffer);
-					} else if (startNewPoly == false && polygonBuffer.length <= 2) {
-						// continue polygon creation
-						let vertexBuffer = polygonBuffer[polygonBuffer.length-1];
-						// draw the edge
-						draw_mode = "set";
-						line_DDA(vertexBuffer[vertexBuffer.length-1].x, vertexBuffer[vertexBuffer.length-1].y, cur_posX, cur_posY,draw_color);
-						vertexBuffer.push({x : cur_posX , y : cur_posY});
-					}
-				} else {
-					alert("No.of start vertices >= No.of end vertices");
+				// polygon creation process
+				if (startNewPoly && polygonBuffer.length < 2) {
+					// new polygon
+					startNewPoly = false;
+					let vertexBuffer = [];
+					vertexBuffer.push({x : cur_posX , y : cur_posY});
+					polygonBuffer.push(vertexBuffer);
+				} else if (startNewPoly == false && polygonBuffer.length <= 2) {
+					// continue polygon creation
+					let vertexBuffer = polygonBuffer[polygonBuffer.length-1];
+					// draw the edge
+					draw_mode = "set";
+					line_DDA(vertexBuffer[vertexBuffer.length-1].x, vertexBuffer[vertexBuffer.length-1].y, cur_posX, cur_posY,draw_color);
+					vertexBuffer.push({x : cur_posX , y : cur_posY});
 				}
 			} else {
 				alert("!! Only 2 polygons !!\n> Press 'space bar' to start establishing morphing relationship");
@@ -88,17 +83,27 @@ function registerVertex(event) {
 				}
 			}
 			// when no.of end vertices > no.of start vertices, then multiple end vertices can be related to a single start vertex
-			/*if (vertexSelectionStarted == false && uniqueStartVerticesAvailableForSelection == 0 && uniqueEndVerticesAvailableForSelection > 0) {
-				for (let i = 0; i < startVertex.length; i++) {
-					if (cur_posX == startVertex[i].x && cur_posY == startVertex[i].y) {
-						startVertex[startVertex.length] = startVertex[i];			
+			if (vertexSelectionStarted == false && uniqueStartVerticesAvailableForSelection == 0 && uniqueEndVerticesAvailableForSelection > 0) {
+				if (warnAboutDuplicateVertex) {
+					alert("> duplicate of ith vertex is generated between ith and (i-1)th vertex\n> new duplicates are more closer to (i-1)th vertex i.e as the duplicates of same vertex (ith) increases, the newely created duplicates are closer to (i-1)th vertex");
+					warnAboutDuplicateVertex = false;
+				}
+				for (let i = 0; i < polygonBuffer[0].length; i++) {
+					if (cur_posX == polygonBuffer[0][i].x && cur_posY == polygonBuffer[0][i].y) {
+						// ith vertex is gonna be mapped to another end vertex
+						// creating a new vertex with contents of ith vertex
+						startVertex.push({ x : polygonBuffer[0][i].x, y : polygonBuffer[0][i].y, duplicate : true});
+						// now im inserting this new vertex into polygon buffer before it's parent vertex
+						polygonBuffer[0].splice(i,0,startVertex[startVertex.length-1]);
+						// this new vertex already comes with a morphing relationship
+						startVertexSelectedForMorphing.splice(i,0,true);	
 						draw_mode = "set";		
 						line_DDA(startVertex[startVertex.length-1].x, startVertex[startVertex.length-1].y, cur_posX, cur_posY, previewColor);
 						vertexSelectionStarted = true;
 						break;
 					}
 				}
-			}*/
+			}
 		} else {
 			for (var i = 0; i < polygonBuffer[1].length; i++) {
 				if (cur_posX == polygonBuffer[1][i].x && cur_posY == polygonBuffer[1][i].y && endVertexSelectedForMorphing[i] == false) {
@@ -146,6 +151,7 @@ function registerVertex(event) {
 		if (uniqueStartVerticesAvailableForSelection == 0 && uniqueEndVerticesAvailableForSelection == 0 && startVertex.length == endVertex.length) {
 			// relationship establishment is over once all the start and end vertices are selected
 			startEstablishingMorphingRelationship = "over";
+			alert("Press 'space' to morph");
 		}
 	}
 }
@@ -162,39 +168,39 @@ addEventListener('keydown', function (event) {
 			// paint cursor
 			draw_mode = "preview";
 			paintPixel(cur_posX,cur_posY,cur_color,cur_color);
-			// closing the polygon occurs only when last vertex and 1st vertex aren't same
-			if (!(vertexBuffer[vertexBuffer.length-1].x == vertexBuffer[0].x && vertexBuffer[vertexBuffer.length-1].y == vertexBuffer[0].y)) {
+			// closing the polygon
+			draw_mode = "set";
+			line_DDA(vertexBuffer[vertexBuffer.length-1].x, vertexBuffer[vertexBuffer.length-1].y, vertexBuffer[0].x, vertexBuffer[0].y, draw_color);
+			//
+			if (polygonBuffer.length == 2) {
+				alert("> you can start establishing morphing relationship between the vertices (blue --> red)\n> press 'space' to morph once relationship is established");
+				startEstablishingMorphingRelationship = true;
+				// coloring the vertices, to make the vertices visible
 				draw_mode = "set";
-				line_DDA(vertexBuffer[vertexBuffer.length-1].x, vertexBuffer[vertexBuffer.length-1].y, vertexBuffer[0].x, vertexBuffer[0].y, draw_color);
+				for (vertexBuffer = polygonBuffer[0], i = vertexBuffer.length-1; i >= 0; i--) {
+					paintPixel(vertexBuffer[i].x, vertexBuffer[i].y, startVertexColor);
+				}
+				for (vertexBuffer = polygonBuffer[1], i = vertexBuffer.length-1; i >= 0; i--) {
+					paintPixel(vertexBuffer[i].x, vertexBuffer[i].y, endVertexColor);
+				}			
+				// updating the flag variables for use in morphing relationship establishment
+				startVertexSelectedForMorphing = [];
+				endVertexSelectedForMorphing = [];
+				for (var i = 0; i < polygonBuffer[0].length; i++) {
+					startVertexSelectedForMorphing.push(false);
+				}
+				for (var i = 0; i < polygonBuffer[1].length; i++) {
+					endVertexSelectedForMorphing.push(false);
+				}
+				uniqueStartVerticesAvailableForSelection = polygonBuffer[0].length;
+				uniqueEndVerticesAvailableForSelection = polygonBuffer[1].length;
 			} 
 		} else {
 			alert("!! select a minimum 3 vertices before closing the polygon !!");
 		}
 	} else if (event.keyCode == 32) {
 		// 'space' key is pressed
-		if (startEstablishingMorphingRelationship == false && startNewPoly == true && polygonBuffer.length == 2) {
-			alert("> you can start establishing morphing relationship between the polygons (blue --> red)\n> press 'space' to start morphing once relationship is established");
-			startEstablishingMorphingRelationship = true;
-			// coloring the vertices, to make the vertices visible
-			draw_mode = "set";
-			for (var vertexBuffer = polygonBuffer[0], i = vertexBuffer.length-1; i >= 0; i--) {
-				paintPixel(vertexBuffer[i].x, vertexBuffer[i].y, startVertexColor);
-			}
-			for (var vertexBuffer = polygonBuffer[1], i = vertexBuffer.length-1; i >= 0; i--) {
-				paintPixel(vertexBuffer[i].x, vertexBuffer[i].y, endVertexColor);
-			}			
-			// updating the flag variables for use in morphing relationship establishment
-			startVertexSelectedForMorphing = [];
-			endVertexSelectedForMorphing = [];
-			for (var i = 0; i < polygonBuffer[0].length; i++) {
-				startVertexSelectedForMorphing.push(false);
-			}
-			for (var i = 0; i < polygonBuffer[1].length; i++) {
-				endVertexSelectedForMorphing.push(false);
-			}
-			uniqueStartVerticesAvailableForSelection = polygonBuffer[0].length;
-			uniqueEndVerticesAvailableForSelection = polygonBuffer[1].length;
-		} else if (startEstablishingMorphingRelationship == "over" && morphingAnimation == false) {			
+		if (startEstablishingMorphingRelationship == "over" && morphingAnimation == false) {			
 			// morphing logic
 			// finding the steps required to animate each relation
 			let translationStepsReqd = [];
@@ -230,8 +236,8 @@ addEventListener('keydown', function (event) {
 					startVertex[j].x += translationStep[j].x;
 					startVertex[j].y += translationStep[j].y;
 				}
-				// drawing the updated polygon
 				drawPoly(polygonBuffer[1],previewColor);
+				// drawing the updated polygon
 				drawPoly(polygonBuffer[0],draw_color);
 				// decrease the counter			
 				maxTranslationStepsReqd--;

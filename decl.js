@@ -1,13 +1,5 @@
 'use strict'
 
-alert("> click to select a vertex\n> press 'enter' to finish a polyon (2 polygons required to start morphing)\n> press 'space' to start establishing morphing relationship");
-
-let canvas = document.getElementById('mainCanvas');
-let context = canvas.getContext('2d');
-
-canvas.width = innerWidth - 20;
-canvas.height = innerHeight - 20;
-
 let cur_posX = 0;
 let cur_posY = 0;
 let cur_color = "#555555";
@@ -37,6 +29,8 @@ let morphingAnimation = false;
 let translationStep = [];
 // var to hold the maximum steps required for any relationship
 let maxTranslationStepsReqd;
+
+let warnAboutDuplicateVertex = true;
 
 // this flag is set to ture once the 'space bar' is pressed after the polygons are decided
 let startEstablishingMorphingRelationship = false;
